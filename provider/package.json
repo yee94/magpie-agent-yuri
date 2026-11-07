@@ -1,0 +1,22 @@
+{
+  "name": "opencode-magpie-plugin",
+  "version": "0.5.1",
+  "private": true,
+  "description": "Bundled OpenCode V2 provider for Magpie's model catalog, preserving native connection attribution",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "exports": { ".": "./dist/index.mjs", "./server": "./dist/index.mjs" },
+  "files": ["dist", "src", "icon.svg", "README.md", "THIRD_PARTY.md", "LICENSE"],
+  "scripts": {
+    "build": "bun build src/index.ts --target=node --format=esm --outfile=dist/index.mjs",
+    "test": "bun test tests"
+  },
+  "engines": { "node": ">=22" },
+  "license": "MIT",
+  "author": "yee94 (https://github.com/yee94)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yee94/magpie-agent-yuri.git",
+    "directory": "provider"
+  }
+}

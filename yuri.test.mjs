@@ -5,7 +5,8 @@ import os from "node:os"
 import path from "node:path"
 import { createHash } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { parse } from "jsonc-parser"
+import { fileURLToPath } from "node:url"
+import { parse } from "./vendor.mjs"
 import { agent, connect } from "./yuri.agent.js"
 import { pathsFor, syncBridge, startBridge } from "./bridge.mjs"
 
@@ -34,7 +35,15 @@ test("Agent and plugin card embed the same original Yuri PNG for offline use", (
   assert.equal(createHash("sha256").update(image).digest("hex"), "aacc7c4365bb7f90723634aa70351c150160ee028818e35314fbf9b04baa9dac")
   assert.ok(pkg.files.includes("ASSET_NOTICE.md"))
   assert.ok(pkg.files.includes("LICENSE-YURI"))
-  assert.equal(pkg.dependencies["jsonc-parser"], "3.3.1")
+  assert.equal(pkg.name, "magpie-agent-yuri")
+  assert.equal(pkg.dependencies, undefined)
+  assert.ok(pkg.files.includes("vendor.mjs"))
+  assert.ok(pkg.files.includes("LICENSE-JSONC-PARSER"))
+  assert.ok(pkg.files.includes("provider"))
+  const provider = JSON.parse(fs.readFileSync(new URL("./provider/package.json", import.meta.url), "utf8"))
+  assert.equal(provider.name, "opencode-magpie-plugin")
+  assert.equal(provider.dependencies, undefined)
+  assert.ok(fs.existsSync(new URL("./provider/dist/index.mjs", import.meta.url)))
   assert.deepEqual(Object.keys(pkg.magpie.summary).sort(), ["en", "zh"])
   assert.ok(Object.values(pkg.magpie.summary).every(text => typeof text === "string" && Buffer.byteLength(text) <= 300))
 })
@@ -60,8 +69,8 @@ test("merges one plugin, leaves comments/options/providers intact, restores byte
   assert.ok(installed.includes('{"package":"other", "options":{"a":1}}'))
   assert.ok(installed.includes('"providers": {"own":{"name":"Mine"}}'))
   assert.deepEqual(get(file).plugins[1], {
-    package: "opencode-magpie-plugin@0.5.1",
-    options: { remote: { baseURL: gateway.v1, token: gateway.key } },
+    package: fileURLToPath(new URL("./provider", import.meta.url)),
+    options: { agentID: "yuri", remote: { baseURL: gateway.v1, token: gateway.key } },
   })
   assert.equal(fs.statSync(file).mode & 0o777, 0o640)
   assert.equal(fs.statSync(p.state).mode & 0o777, 0o600)
@@ -87,6 +96,27 @@ for (const entry of [
   assert.equal(fs.existsSync(p.state), false)
   put(p.control, {})
   assert.equal(syncBridge(p), "disconnected")
+  assert.equal(fs.readFileSync(file, "utf8"), original)
+})
+
+test("updates only a still-owned legacy npm entry to the bundled provider", t => {
+  const { p, file } = fixture(t)
+  const original = JSON.stringify({ plugins: ["other"], model: "user/keep" })
+  put(file, original)
+  syncBridge(p)
+  const state = get(p.state)
+  const legacy = { package: "opencode-magpie-plugin@0.5.1", options: { remote: { baseURL: gateway.v1, token: gateway.key } } }
+  const installed = get(file)
+  installed.plugins[1] = legacy
+  put(file, installed)
+  put(p.state, { ...state, entry: legacy, after: fs.readFileSync(file, "utf8") })
+  assert.equal(syncBridge(p), "connected")
+  assert.deepEqual(get(file).plugins, ["other", {
+    package: fileURLToPath(new URL("./provider", import.meta.url)),
+    options: { agentID: "yuri", remote: { baseURL: gateway.v1, token: gateway.key } },
+  }])
+  put(p.control, {})
+  syncBridge(p)
   assert.equal(fs.readFileSync(file, "utf8"), original)
 })
 

@@ -4,11 +4,11 @@ import path from "node:path"
 import { randomUUID } from "node:crypto"
 import { fileURLToPath } from "node:url"
 import { isDeepStrictEqual } from "node:util"
-import { parse, parseTree, modify, applyEdits } from "jsonc-parser"
+import { parse, parseTree, modify, applyEdits } from "./vendor.mjs"
 import { agent } from "./yuri.agent.js"
 
 const PACKAGE = "opencode-magpie-plugin"
-const SPEC = `${PACKAGE}@0.5.1`
+const SPEC = fileURLToPath(new URL("./provider", import.meta.url))
 const compatiblePackages = [PACKAGE, "@magpie-community/opencode-magpie-provider"]
 const parseOptions = { allowTrailingComma: true, allowEmptyContent: true }
 
@@ -89,7 +89,7 @@ function desired(control) {
   if (typeof control.baseURL !== "string" || typeof control.gatewayKey !== "string" || !/^[\x21-\x7e]+$/.test(control.gatewayKey)) throw new Error("Incomplete Yuri connection; reconnect in Magpie")
   const url = new URL(control.baseURL)
   if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) throw new Error("Invalid Magpie API URL")
-  return { package: SPEC, options: { remote: { baseURL: control.baseURL, token: control.gatewayKey } } }
+  return { package: SPEC, options: { agentID: "yuri", remote: { baseURL: control.baseURL, token: control.gatewayKey } } }
 }
 
 function json(file) {

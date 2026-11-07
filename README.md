@@ -1,29 +1,35 @@
 # Yuri as a Magpie Agent
 
+Yuri original website: **https://useyuri.top**.
+
 ## Community review status
 
 [Community PR #802](https://github.com/magpie-community/plugins/pull/802)
-now includes the provider's complete source as a separately published
-`@magpie-community/opencode-magpie-provider` package, configurable Yuri request
-attribution, mutation-checked safety tests and real Yuri Web verification.
+now includes the provider's complete source as a separate
+`@magpie-community/opencode-magpie-provider` package awaiting first publication,
+configurable advisory labels, mutation-checked safety tests and real Yuri Web
+verification using Magpie's assigned connection key without changing the real
+OpenCode User-Agent.
 The standalone Git package shares the safety/exit tests, 3-second poll interval,
 original Logo and localized package summaries. It no longer appends a mixed
 English/Chinese warning to Magpie's localized connection message.
 
-**Intentional publication difference:** this standalone release still injects
-the already-published `opencode-magpie-plugin@0.5.1`; it does not point existing
-Git users at a community npm package that cannot yet be resolved. That upstream
-version does not support `agentID`, so its request attribution remains OpenCode.
-The community branch pins the reviewed provider and passes `agentID: "yuri"`.
-Migration of this Git package waits for community approval and the provider's
-first npm publication. Either provider, including a user-installed community
-version, is recognized and preserved without duplication or option changes.
+**Git installation is self-contained:** this repository includes the corrected
+Provider's complete source and dependency-free runtime under [`provider/`](provider).
+The root package remains `magpie-agent-yuri`; the bundled provider keeps the
+original `opencode-magpie-plugin` name. The bridge loads that installed local
+directory directly, with `agentID: "yuri"` as an advisory label. No package rename,
+new npm publication, runtime dependency install or build step is required.
+Actual local Agent attribution comes from the key Magpie assigns to the
+connection, passed unchanged; OpenCode's real User-Agent is never overwritten.
+Existing original/community provider installations remain recognized and are
+preserved without duplication or option changes.
 
 Nothing in this update replaces an existing user-owned provider or changes a
 running installation automatically.
 
 Adds **Yuri** to Magpie's Agents page. Connecting installs
-[`opencode-magpie-plugin`](https://github.com/yee94/opencode-magpie-plugin)
+the bundled [`opencode-magpie-plugin`](provider)
 in Yuri's OpenCode V2 service configuration, rather than generating a second,
 static provider catalog or changing Yuri's app bundle.
 
@@ -55,7 +61,6 @@ For local development:
 ```sh
 git clone https://github.com/yee94/magpie-agent-yuri.git
 cd magpie-agent-yuri
-npm install --ignore-scripts
 magpie plugin add "$(pwd)"
 ```
 
@@ -64,9 +69,12 @@ magpie plugin add "$(pwd)"
 - `~/.config/magpie/agents/yuri/connection.json` is the connection sidecar Magpie itself
   stashes and restores. It contains only the gateway API URL and assigned key.
 - The companion Bun module merges **one entry** into the global OpenCode
-  `plugins` array, pinning `opencode-magpie-plugin@0.5.1`. A new entry passes
+  `plugins` array, pointing at the installed package's absolute `provider/`
+  directory. A new entry passes
   `options.remote.baseURL` and `options.remote.token` from that connection,
   so it does not guess a port or copy any upstream subscription credentials.
+  `options.agentID: "yuri"` sets an advisory header only, not a fake User-Agent
+  or a claim to detect which UI sent a request.
 - OpenCode's directory is `OPENCODE_CONFIG_DIR`, otherwise
   `$XDG_CONFIG_HOME/opencode`, otherwise `~/.config/opencode`. The bridge checks
   both `opencode.json` and `opencode.jsonc`, plus `OPENCODE_CONFIG` when set.
@@ -76,8 +84,8 @@ magpie plugin add "$(pwd)"
   and readable local package references are **left untouched**. They are never
   taken over, downgraded or duplicated. Their own gateway configuration wins.
 - JSONC comments, trailing commas, BOM, unrelated settings and plugins are kept.
-  `jsonc-parser` is the sole runtime dependency, needed for token-level edits
-  rather than rewriting the user's config as JSON.
+  The bundled `jsonc-parser` performs token-level edits rather than rewriting
+  the user's config as JSON; its license is included in `LICENSE-JSONC-PARSER`.
 - `~/.config/magpie/agents/yuri/state.json` records ownership. A private
   `.pending` journal makes interrupted edits recoverable without overwriting
   a concurrent edit. These files can contain configuration credentials;
@@ -131,15 +139,24 @@ Do not use Magpie's built-in OpenCode adapter to maintain another static
 `magpie` provider alongside this dynamic integration unless you intend to have
 both catalogs.
 
+A CLI using Yuri's same provider/key shares that connection's attribution.
+`agentID` and `X-Magpie-Agent` are advisory labels, not per-UI isolation. The
+built-in OpenCode adapter has its own catalog and connection; its provider/model
+settings are preserved when this bridge disconnects.
+
 ## Tests
 
 ```sh
-npm ci --ignore-scripts
 npm test
+npm run test:mutations
+bun test provider/tests
 ```
 
 The tests use temporary homes and fake gateway keys. They do not install
 anything into a running Yuri or contact a model provider.
+
+See [`VERIFICATION.md`](VERIFICATION.md) for the native Yuri Web UI/CLI run,
+unchanged real User-Agent, assigned-key checks and separate connection Usage.
 
 ## License
 
