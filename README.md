@@ -1,5 +1,27 @@
 # Yuri as a Magpie Agent
 
+## Community review status
+
+[Community PR #802](https://github.com/magpie-community/plugins/pull/802)
+now includes the provider's complete source as a separately published
+`@magpie-community/opencode-magpie-provider` package, configurable Yuri request
+attribution, mutation-checked safety tests and real Yuri Web verification.
+The standalone Git package shares the safety/exit tests, 3-second poll interval,
+original Logo and localized package summaries. It no longer appends a mixed
+English/Chinese warning to Magpie's localized connection message.
+
+**Intentional publication difference:** this standalone release still injects
+the already-published `opencode-magpie-plugin@0.5.1`; it does not point existing
+Git users at a community npm package that cannot yet be resolved. That upstream
+version does not support `agentID`, so its request attribution remains OpenCode.
+The community branch pins the reviewed provider and passes `agentID: "yuri"`.
+Migration of this Git package waits for community approval and the provider's
+first npm publication. Either provider, including a user-installed community
+version, is recognized and preserved without duplication or option changes.
+
+Nothing in this update replaces an existing user-owned provider or changes a
+running installation automatically.
+
 Adds **Yuri** to Magpie's Agents page. Connecting installs
 [`opencode-magpie-plugin`](https://github.com/yee94/opencode-magpie-plugin)
 in Yuri's OpenCode V2 service configuration, rather than generating a second,
@@ -23,7 +45,7 @@ magpie plugin add github:yee94/magpie-agent-yuri
 Installation alone does not connect Yuri or change OpenCode's plugins. Turn
 **Yuri** on in Magpie's **Agents** page, then choose a model in Yuri. Keep Magpie
 running while changing the switch; its Bun host applies the change within about
-a second. OpenCode watches its configuration; no service restart is requested.
+three seconds. OpenCode watches its configuration; no service restart is requested.
 
 The package lives at this repository's root, so Magpie can install it directly
 from GitHub. It is not published to npm or listed in Discover.
