@@ -24,15 +24,18 @@ const fixture = (t, env = {}) => {
 }
 const get = file => parse(fs.readFileSync(file, "utf8"))
 
-test("Agent and plugin card embed the same original Yuri PNG for offline use", () => {
+test("Agent and plugin card embed the same original transparent mono Yuri SVG for offline use", () => {
   const pkg = JSON.parse(fs.readFileSync(new URL("./package.json", import.meta.url), "utf8"))
   assert.equal(pkg.magpie.icon, agent.icon)
-  assert.ok(agent.icon.startsWith("data:image/png;base64,"))
+  assert.ok(agent.icon.startsWith("data:image/svg+xml;base64,"))
   const image = Buffer.from(agent.icon.split(",")[1], "base64")
-  assert.equal(image.length, 1799)
-  assert.equal(image.readUInt32BE(16), 32)
-  assert.equal(image.readUInt32BE(20), 32)
-  assert.equal(createHash("sha256").update(image).digest("hex"), "aacc7c4365bb7f90723634aa70351c150160ee028818e35314fbf9b04baa9dac")
+  assert.deepEqual(image, fs.readFileSync(new URL("./assets/yuri.svg", import.meta.url)))
+  assert.equal(createHash("sha256").update(image).digest("hex"), "b059c19e3a9671572f781258397a2d3ded2cf4dd99a604d61753b9d62cc39e33")
+  const svg = image.toString("utf8")
+  assert.match(svg, /^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" viewBox="0 0 100 100">/)
+  assert.doesNotMatch(svg, /<(?:rect|image|script|style|foreignObject)\b/i)
+  assert.deepEqual([...svg.matchAll(/\bfill="([^"]+)"/g)].map(match => match[1]), ["#FFFFFF"])
+  assert.ok(pkg.files.includes("assets"))
   assert.ok(pkg.files.includes("ASSET_NOTICE.md"))
   assert.ok(pkg.files.includes("LICENSE-YURI"))
   assert.equal(pkg.name, "magpie-agent-yuri")
@@ -46,6 +49,21 @@ test("Agent and plugin card embed the same original Yuri PNG for offline use", (
   assert.ok(fs.existsSync(new URL("./provider/dist/index.mjs", import.meta.url)))
   assert.deepEqual(Object.keys(pkg.magpie.summary).sort(), ["en", "zh"])
   assert.ok(Object.values(pkg.magpie.summary).every(text => typeof text === "string" && Buffer.byteLength(text) <= 300))
+})
+
+test("icon regeneration keeps both embedded surfaces byte-identical and is idempotent", t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "magpie-yuri-artwork-"))
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  for (const file of ["package.json", "yuri.agent.js", "assets/yuri.svg", "scripts/sync-icon.mjs"]) {
+    put(path.join(root, file), fs.readFileSync(new URL(file, import.meta.url), "utf8"))
+  }
+  for (let i = 0; i < 2; i++) {
+    const result = spawnSync(process.execPath, ["scripts/sync-icon.mjs"], { cwd: root, encoding: "utf8" })
+    assert.equal(result.status, 0, result.stderr)
+    for (const file of ["package.json", "yuri.agent.js"]) {
+      assert.equal(fs.readFileSync(path.join(root, file), "utf8"), fs.readFileSync(new URL(file, import.meta.url), "utf8"))
+    }
+  }
 })
 
 test("connect-only Agent keeps the gateway in its own sidecar", () => {

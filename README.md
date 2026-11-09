@@ -37,8 +37,11 @@ This is a **Magpie agent package**, not an OpenCode GUI plugin. Install this
 package in Magpie; the package it injects runs in OpenCode. Yuri's existing
 plugin settings show the latter as `magpie.providers`.
 
-The Agent row and installed-plugin card both embed Yuri's original 32px app
-icon for offline display. See [artwork provenance](ASSET_NOTICE.md).
+The Agent row and installed-plugin card both embed Yuri's original transparent
+monochrome SVG for offline display. Magpie renders this single-tone artwork as
+a text-colored mask, following its light/dark theme, including manual overrides.
+See [artwork provenance](ASSET_NOTICE.md). The source SVG is in `assets/yuri.svg`;
+after changing it, run `npm run sync:icon` to refresh both embedded copies.
 
 ## Install from GitHub
 
